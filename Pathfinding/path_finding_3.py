@@ -1,4 +1,4 @@
-# VERSION 3 : IMPROVE ALGORITHM
+# VERSION 3 : ADDING ANTI-DEAD-END AND MAKE THIS CODE READABLE
 
 import numpy as np
 from time import sleep
@@ -103,6 +103,7 @@ class World:
 #     [P, S, S, S]
 # ])
 
+# ! ====== ANTI-DEAD-END ====== ! #
 # # * ---- First Case ----
 # world = World([
 #     [O, O, T, O, O, S],
@@ -111,13 +112,14 @@ class World:
 #     [O, O, O, S, S, S]
 # ])
 
-# * --- Second Case ----
-world = World([
-    [O, O, T, O, S, O],
-    [O, S, S, O, S, O],
-    [O, S, S, O, S, S],
-    [O, O, O, S, O, P]
-])
+# # * --- Second Case ----
+# world = World([
+#     [O, O, T, O, S, O],
+#     [O, S, S, O, S, O],
+#     [O, S, S, O, S, S],
+#     [O, O, O, S, O, P]
+# ])
+
 
 pos = [0, 0]
 max_iteration = 10
@@ -185,46 +187,46 @@ def find_path(world:World):
     '''Finding Closest Path! : FUNGSI UTAMA DARI PATHFINDING'''
     global path_history
     
-    current_position = []                                                   # ? Berisi informasi mengenai posisi dari Player
-    target_pos = find_pos(world, T)                                         # ? Berisi informasi mengenai posisi dari Target
-    index = 0                                                               # ? Index yang akan dijumlahkan tiap pengulangan (iterasi)
-    print(world.show_clean())                                               # ? Menampilkan gambar mengenai map dalam WORLD
+    current_position = []                                                           # ? Berisi informasi mengenai posisi dari Player
+    target_pos = find_pos(world, T)                                                 # ? Berisi informasi mengenai posisi dari Target
+    index = 0                                                                       # ? Index yang akan dijumlahkan tiap pengulangan (iterasi)
+    print(world.show_clean())                                                       # ? Menampilkan gambar map dalam WORLD
 
     while True:
-        if index == 0:                                                      # ? Jika ini adalah iterasi pertama
-            sleep(DELAY_BETWEEN_FRAME+0.5)                                  # ? Maka delay sebesar variable DELAY_BETWEEN_FRAME ditambahkan 0.5 (jadi lebih lama 0.5 detik) 
-        system("cls")                                                       # ? Membersihkan layar yang dimana ini penting untuk membuat seolah world nya berjalan
+        if index == 0:                                                              # ? Jika ini adalah iterasi pertama
+            sleep(DELAY_BETWEEN_FRAME+0.5)                                          # ? Maka delay sebesar variable DELAY_BETWEEN_FRAME ditambahkan 0.5 (jadi lebih lama 0.5 detik) 
+        system("cls")                                                               # ? Membersihkan layar yang dimana ini penting untuk membuat seolah world nya berjalan
 
-        current_position = find_pos(world)                                  # ? Meng-update posisi dari Player
+        current_position = find_pos(world)                                          # ? Meng-update posisi dari Player
 
-        checked_positions = check_surround(world, current_position)         # ? Memeriksa objek sekitar player
+        checked_positions = check_surround(world, current_position)                 # ? Memeriksa objek sekitar player
         
-        min_distance = float('inf')                                         # ? Sebagai 'FLAGS' untuk mencari jarak terdekat
-        next_position = []                                                  # ? Variable yang menyimpan posisi selajutnya
+        min_distance = float('inf')                                                 # ? Sebagai 'FLAGS' untuk mencari jarak terdekat
+        next_position = []                                                          # ? Variable yang menyimpan posisi selajutnya
 
         # ========== PENGAMBILAN KEPUTUSAN ===========
-        for [pos, state] in checked_positions:
-            if state == False:
-                continue
+        for [pos, state] in checked_positions:                                      # ? Mengambil satu satu elemen checked_position yang berisi posisi dan boleh ditempati atau ga
+            if state == False:                                                      # ? Cek apakah boleh ditempati atau tidak
+                continue                                                            # ? Jika tidak skip ke iterasi selanjutnya
             
-            distance = [abs(pos[0]-target_pos[0]), abs(pos[1]-target_pos[1])]
-            sum_distance = distance[0]+distance[1]
+            distance = [abs(pos[0]-target_pos[0]), abs(pos[1]-target_pos[1])]       # ? Jarak antara posisi yang boleh ditempati di iterasi sekarang dengan posisi target
+            sum_distance = distance[0]+distance[1]                                  # ? Jumlah jarak antara jauhnya posisi y dan jauhnya posisi x
             
-            if(min_distance > sum_distance):
-                min_distance = sum_distance
-                next_position = pos
+            if(min_distance > sum_distance):                                        # ? Jika 'flags' lebih besar dari jarak sekarang
+                min_distance = sum_distance                                         # ? Maka jarak sekarang akan menjadi 'flags'
+                next_position = pos                                                 # ? dan posisi sekarang akan menjadi calon next_position
 
         # ===========================================
                 
-        if min_distance == float('inf'):
-            world = rewind(world, current_position)
-            if not world:
-                print("KAMU MENJEBAK SAYA KOCAK!")
-                break
+        if min_distance == float('inf'):                                            # ? jika 'flags' tidak ada perubahan sama sekali
+            world = rewind(world, current_position)                                 # ? itu berarti tidak ada jalan sama sekali maka gunakan fungsi rewind karena dalam posisi terjebak
+            if not world:                                                           # ? jika fungsi Rewind mengembalikan FALSE yang artinya tidak ada jalan
+                print("KAMU MENJEBAK SAYA KOCAK!")                                  # ? Maka selesai karena tidak ada jalan sama sekali
+                break                                                               # ? Keluar loop
             continue
                 
         world = move_player(world, next_position, current_position)
-        print(world.show_clean())                                           # ? Menampilkan gambar mengenai map dalam WORLD
+        print(world.show_clean())                                           # ? Menampilkan gambar map dalam WORLD
         path_history.append(current_position)
         
         
