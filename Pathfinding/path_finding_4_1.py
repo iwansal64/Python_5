@@ -127,27 +127,28 @@ path_history = [] # (V.3)
 
 def check_surround(world:World, player_pos:list[2]) -> list[8]:
     '''Check Around Player : Fungsi yang bertugas untuk mengecek sekeliling nya. Mengembalikan array yang berisi posisi dan bisa atau tidaknya'''
-    object_list = []                                                                                # ? ISI NYA : [POSISI, BOLEH DILEWATI ATAU GAK]. CONTOH : [[[3, 2], True], [[3, 3], False]]
-    check_coordinate = [[0, 1], [1, 1], [1, 0], [1, -1], [0, -1], [-1, -1], [-1, 0], [-1, 1]]       # ? arah dari posisi yang mau dicek
-    for i in check_coordinate:
-        current_object = ""                                                                         # ? liat object nya apa.. apakah Player atau Target atau Space atau Obstacle
+    object_list = []                                                                                    # ? ISI NYA : [POSISI, BOLEH DILEWATI ATAU GAK]. CONTOH : [[[3, 2], True], [[3, 3], False]]
+    check_coordinates_around = [[0, 1], [1, 1], [1, 0], [1, -1], [0, -1], [-1, -1], [-1, 0], [-1, 1]]   # ? arah dari posisi yang mau dicek
+    check_coordinates_vision = [[0, 2], [1, 2], [2, 2], [2, 1], [2, 0], [2, -1], [2, -2], [1, -2], [0, -2], [-1, -2], [-2, -2], [-2, -1], [-2, 0], [-2, 1], [-2, 2], [-1, 2]] # ! V.4
+    for i in check_coordinates_around:
+        current_object = ""                                                                             # ? liat object nya apa.. apakah Player atau Target atau Space atau Obstacle
 
-        y_object = player_pos[0]+i[0]                                                               # ? kordinat dari posisi yang ingin dicek setelah dijumlahkan dengan vektor arah
-        x_object = player_pos[1]+i[1]                                                               # ? sama aja kordinat dari posisi yang ingin di cek di x axis
+        y_object = player_pos[0]+i[0]                                                                   # ? kordinat dari posisi yang ingin dicek setelah dijumlahkan dengan vektor arah
+        x_object = player_pos[1]+i[1]                                                                   # ? sama aja kordinat dari posisi yang ingin di cek di x axis
         
 
         
-        if(y_object < 0 or y_object >= len(world) or x_object < 0 or x_object >= len(world[0])):    # ? Cek apakah posisi nya diluar batas dari matrix atau ga
-            object_list.append([[y_object, x_object], False])                                       # ? Jika iya maka langsung tidak diperbolehkan lewat situ!
-            continue                                                                                # ? Balik lagi ke atas
+        if(y_object < 0 or y_object >= len(world) or x_object < 0 or x_object >= len(world[0])):        # ? Cek apakah posisi nya diluar batas dari matrix atau ga
+            object_list.append([[y_object, x_object], False])                                           # ? Jika iya maka langsung tidak diperbolehkan lewat situ!
+            continue                                                                                    # ? Balik lagi ke atas
 
-        current_object = world[y_object][x_object]                                                  # ? Ambil objek yang sedang berada di posisi tertentu dalam iterasi sekarang x_object dan y_object
-        if(current_object == S or current_object == T):                                             # ? Cek objek apakah dia bisa dilewati atau gak
-            object_list.append([[y_object, x_object], True])                                        # ? Jika iya maka TRUE
+        current_object = world[y_object][x_object]                                                      # ? Ambil objek yang sedang berada di posisi tertentu dalam iterasi sekarang x_object dan y_object
+        if(current_object == S or current_object == T):                                                 # ? Cek objek apakah dia bisa dilewati atau gak
+            object_list.append([[y_object, x_object], True])                                            # ? Jika iya maka TRUE
         else:
-            object_list.append([[y_object, x_object], False])                                       # ? Jika tidak maka FALSE
+            object_list.append([[y_object, x_object], False])                                           # ? Jika tidak maka FALSE
 
-    return object_list                                                                              # ? Mengembalikan info yang kita dapatkan
+    return object_list                                                                                  # ? Mengembalikan info yang kita dapatkan
         
     
 

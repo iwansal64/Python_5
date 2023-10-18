@@ -1,4 +1,4 @@
-# VERSION 3 : IMPROVE ALGORITHM
+# VERSION 3 : ADDING ANTI-DEAD-END AND MAKE THIS CODE READABLE
 
 import numpy as np
 from time import sleep
@@ -10,7 +10,7 @@ P = "P" # Player
 S = " " # Space
 W = "-" # Walked
 O = "X" # Obstacle
-BLOCKED_PATH = "*" # Obstacle
+BLOCKED_PATH = "X" # Blocked Path
 BORDER = " "
 DELAY_BETWEEN_FRAME = 0.5
 
@@ -112,22 +112,50 @@ class World:
 #     [O, O, O, S, S, S]
 # ])
 
-# # * --- Second Case ----
-# world = World([
-#     [O, O, T, O, S, O],
-#     [O, S, S, O, S, O],
-#     [O, S, S, O, S, S],
-#     [O, O, O, S, O, P]
-# ])
+# * --- Second Case ----
+world = World([
+    [O, O, T, O, S, O],
+    [O, S, S, O, S, O],
+    [O, S, S, O, S, S],
+    [O, O, O, S, O, P]
+])
+
 
 # ! ====== ANTI-INEFFICIENT ====== ! #
-# # * ----- First Case -----
+# # # * ----- First Case -----
+# world = World([
+#     [O, O, S, O, S, O],
+#     [O, S, S, S, S, P],
+#     [O, S, S, O, S, S],
+#     [O, O, T, O, S, S]
+# ])
+
+# # * ----- Second Case -----
 world = World([
     [O, O, S, O, S, O],
     [O, S, S, S, S, P],
     [O, S, S, O, S, S],
+    [O, S, S, O, S, S],
     [O, O, T, O, S, S]
 ])
+
+# # # * ----- Third Case -----
+# world = World([
+#     [O, O, S, O, S, O],
+#     [O, S, T, O, S, P],
+#     [O, S, S, O, S, O],
+#     [O, S, S, O, S, S],
+#     [O, O, S, S, S, S]
+# ])
+
+# # # * ----- Fourth Case -----
+# world = World([
+#     [S, S, S, S, S, O],
+#     [S, O, O, O, S, O],
+#     [S, O, S, P, S, O],
+#     [S, O, S, S, S, O],
+#     [T, O, O, O, O, O]
+# ])
 
 
 pos = [0, 0]
@@ -198,6 +226,7 @@ def find_path(world:World):
     
     current_position = []                                                           # ? Berisi informasi mengenai posisi dari Player
     target_pos = find_pos(world, T)                                                 # ? Berisi informasi mengenai posisi dari Target
+    start_pos = find_pos(world, P)
     index = 0                                                                       # ? Index yang akan dijumlahkan tiap pengulangan (iterasi)
     print(world.show_clean())                                                       # ? Menampilkan gambar map dalam WORLD
 
@@ -210,7 +239,7 @@ def find_path(world:World):
 
         checked_positions = check_surround(world, current_position)                 # ? Memeriksa objek sekitar player
         
-        min_distance = float('inf')                                                 # ? Sebagai 'FLAGS' untuk mencari jarak terdekat
+        lowest_cost = float('inf')                                                  # ? Sebagai 'FLAGS' untuk mencari jarak terdekat
         next_position = []                                                          # ? Variable yang menyimpan posisi selajutnya
 
         # ========== PENGAMBILAN KEPUTUSAN ===========
@@ -218,18 +247,17 @@ def find_path(world:World):
             if state == False:                                                      # ? Cek apakah boleh ditempati atau tidak
                 continue                                                            # ? Jika tidak skip ke iterasi selanjutnya
             
-            distance = [abs(pos[0]-target_pos[0]), abs(pos[1]-target_pos[1])]       # ? Jarak antara posisi yang boleh ditempati di iterasi sekarang dengan posisi target
-            sum_distance = distance[0]+distance[1]                                  # ? Jumlah jarak antara jauhnya posisi y dan jauhnya posisi x
+            g_cost = abs(pos[0]-target_pos[0]) + abs(pos[1]-target_pos[1])          # ? Jarak antara posisi yang boleh ditempati di iterasi sekarang dengan posisi target (h cost)
+            h_cost = abs(pos[0]-target_pos[0]) + abs(pos[1]-target_pos[1])          # ? Jarak antara posisi yang boleh ditempati di iterasi sekarang dengan posisi awal (g cost)
+            f_cost = g_cost+h_cost                                                  # ? Jumlah jarak antara jauhnya 
             
-            if(min_distance > sum_distance):                                        # ? Jika 'flags' lebih besar dari jarak sekarang
-                min_distance = sum_distance                                         # ? Maka jarak sekarang akan menjadi 'flags'
+            if(lowest_cost > f_cost):                                               # ? Jika 'flags' lebih besar dari jarak sekarang
+                lowest_cost = f_cost                                                # ? Maka jarak sekarang akan menjadi 'flags'
                 next_position = pos                                                 # ? dan posisi sekarang akan menjadi calon next_position
 
         # ===========================================
-
-        # (V4 Inefficient-Improvement)
                 
-        if min_distance == float('inf'):                                            # ? jika 'flags' tidak ada perubahan sama sekali
+        if lowest_cost == float('inf'):                                             # ? jika 'flags' tidak ada perubahan sama sekali
             world = rewind(world, current_position)                                 # ? itu berarti tidak ada jalan sama sekali maka gunakan fungsi rewind karena dalam posisi terjebak
             if not world:                                                           # ? jika fungsi Rewind mengembalikan FALSE yang artinya tidak ada jalan
                 print("KAMU MENJEBAK SAYA KOCAK!")                                  # ? Maka selesai karena tidak ada jalan sama sekali

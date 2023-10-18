@@ -1,18 +1,21 @@
-# VERSION 3 : ADDING ANTI-DEAD-END AND MAKE THIS CODE READABLE
+# VERSION 3 : IMPROVE ALGORITHM
 
 import numpy as np
 from time import sleep
 from os import system
 import math
 
-T = "T" # Target
-P = "P" # Player
-S = " " # Space
-W = "-" # Walked
-O = "X" # Obstacle
-BLOCKED_PATH = "X" # Blocked Path
+MT = "T" # Main Target
+T = "S"  # Target
+P = "P"  # Player
+S = " "  # Space
+W = "-"  # Walked
+O = "X"  # Obstacle
+
+CURSED_PATH = "*" # Obstacle
 BORDER = " "
 DELAY_BETWEEN_FRAME = 0.5
+MAX_ITERATION = 30
 
 class World:
     def __init__(self, matrix:list):
@@ -24,7 +27,7 @@ class World:
             for j in i:
                 if j == P:
                     markup[0] = True
-                elif j == T:
+                elif j == MT:
                     markup[1] = True
                 elif j == S:
                     markup[2] = True
@@ -85,19 +88,26 @@ class World:
         
         return retval
     
+    def replace(self, before:str, after:str):
+        for index1, i in enumerate(self.matrix):
+            for index2, j in enumerate(i):
+                if j == before:
+                    self.matrix[index1][index2] = after
+                    
+    
 
 
 
 # # 3x3
 # world = World([
-#     [S, S, T],
+#     [S, S, MT],
 #     [S, O, O],
 #     [S, P, S]
 # ])
 
 # # 4x4 World
 # world = World([
-#     [O, T, O, S],
+#     [O, MT, O, S],
 #     [S, S, O, O],
 #     [O, O, S, O],
 #     [P, S, S, S]
@@ -106,24 +116,61 @@ class World:
 # ! ====== ANTI-DEAD-END ====== ! #
 # # * ---- First Case ----
 # world = World([
-#     [O, O, T, O, O, S],
+#     [O, O, MT, O, O, S],
 #     [O, S, S, O, S, O],
 #     [O, S, S, O, S, P],
 #     [O, O, O, S, S, S]
 # ])
 
-# * --- Second Case ----
+# # * --- Second Case ----
+# world = World([
+#     [O, O, MT, O, S, O],
+#     [O, S, S, O, S, O],
+#     [O, S, S, O, S, S],
+#     [O, O, O, S, O, P]
+# ])
+
+# ! ====== ANTI-INEFFICIENT ====== ! #
+# # # * ----- First Case -----
+# world = World([
+#     [O, O, S, O, S, O],
+#     [O, S, S, S, S, P],
+#     [O, S, S, O, S, S],
+#     [O, O, MT, O, S, S]
+# ])
+
+# # # * ----- Second Case -----
+# world = World([
+#     [O, O, S, O, S, O],
+#     [O, S, S, S, S, P],
+#     [O, S, S, O, S, S],
+#     [O, S, S, O, S, S],
+#     [O, O, MT, O, S, S]
+# ])
+
+# # # * ----- Third Case -----
+# world = World([
+#     [O, O, S, O, S, O],
+#     [O, S, MT, O, S, P],
+#     [O, S, S, O, S, O],
+#     [O, S, S, O, S, S],
+#     [O, O, S, S, S, S]
+# ])
+
+# # * ----- Fourth Case -----
 world = World([
-    [O, O, T, O, S, O],
-    [O, S, S, O, S, O],
-    [O, S, S, O, S, S],
-    [O, O, O, S, O, P]
+    [S, S, S, S, S, O],
+    [S, O, O, O, S, O],
+    [S, O, S, P, S, O],
+    [S, O, S, S, S, O],
+    [MT, O, O, O, O, O]
 ])
 
 
 pos = [0, 0]
-max_iteration = 10
 path_history = [] # (V.3)
+last_distance_to_start_pos = 0 # (V.4)
+start_pos = [] # (V.4)
 
 def check_surround(world:World, player_pos:list[2]) -> list[8]:
     '''Check Around Player : Fungsi yang bertugas untuk mengecek sekeliling nya. Mengembalikan array yang berisi posisi dan bisa atau tidaknya'''
@@ -142,7 +189,7 @@ def check_surround(world:World, player_pos:list[2]) -> list[8]:
             continue                                                                                # ? Balik lagi ke atas
 
         current_object = world[y_object][x_object]                                                  # ? Ambil objek yang sedang berada di posisi tertentu dalam iterasi sekarang x_object dan y_object
-        if(current_object == S or current_object == T):                                             # ? Cek objek apakah dia bisa dilewati atau gak
+        if(current_object == S or current_object == MT or current_object == T):                                             # ? Cek objek apakah dia bisa dilewati atau gak
             object_list.append([[y_object, x_object], True])                                        # ? Jika iya maka TRUE
         else:
             object_list.append([[y_object, x_object], False])                                       # ? Jika tidak maka FALSE
@@ -172,23 +219,52 @@ def find_pos(world:World, target:str=P) -> list[2]:
 
 def rewind(world:World, player_pos:list, index:int=-1):
     '''(V.3) Rewind if stucked!'''
+    global path_history
+    
     try:
-        world = move_player(world, path_history[index], player_pos, BLOCKED_PATH)
+        world = move_player(world, path_history[index], player_pos, CURSED_PATH)
     except IndexError:
-        return False
+        return [world, False]
     player_pos = find_pos(world)
     if True not in ([i[1] for i in check_surround(world, player_pos)]):
         return rewind(world, player_pos, index-1)
 
+    print("REWINDED")
+    sleep(0.5)
+    return world
+
+def put_target(world:World, position:list, start_pos:list, goto_start_pos:bool=True):
+    '''(V.4) Put current target'''
+    global path_history
+    
+    if goto_start_pos:
+        player_pos = find_pos(world)
+        world = move_player(world, start_pos, player_pos)
+        path_history = []
+        world[player_pos[0]][player_pos[1]] = CURSED_PATH
+        
+
+    world[position[0]][position[1]] = T
+
+    print("PUT_TARGET")
     return world
     
+def operate_two_list(a:list, b:list, operation):
+    '''(V.4) Merging two list.. '''
+    z = [i for i in range(len(a))]
+    for i in range(len(a)):
+        z[i] = operation(a[i], b[i])
+        
+    return z
 
 def find_path(world:World):
     '''Finding Closest Path! : FUNGSI UTAMA DARI PATHFINDING'''
-    global path_history
+    global path_history, last_distance_to_start_pos
+    
+    start_pos = find_pos(world)
     
     current_position = []                                                           # ? Berisi informasi mengenai posisi dari Player
-    target_pos = find_pos(world, T)                                                 # ? Berisi informasi mengenai posisi dari Target
+    target_pos = find_pos(world, MT)                                                 # ? Berisi informasi mengenai posisi dari Target
     index = 0                                                                       # ? Index yang akan dijumlahkan tiap pengulangan (iterasi)
     print(world.show_clean())                                                       # ? Menampilkan gambar map dalam WORLD
 
@@ -209,7 +285,12 @@ def find_path(world:World):
             if state == False:                                                      # ? Cek apakah boleh ditempati atau tidak
                 continue                                                            # ? Jika tidak skip ke iterasi selanjutnya
             
-            distance = [abs(pos[0]-target_pos[0]), abs(pos[1]-target_pos[1])]       # ? Jarak antara posisi yang boleh ditempati di iterasi sekarang dengan posisi target
+            try:
+                distance = [abs(pos[0]-target_pos[0]), abs(pos[1]-target_pos[1])]       # ? Jarak antara posisi yang boleh ditempati di iterasi sekarang dengan posisi target
+            except:
+                print(target_pos)
+                raise Exception("BREAK")
+            
             sum_distance = distance[0]+distance[1]                                  # ? Jumlah jarak antara jauhnya posisi y dan jauhnya posisi x
             
             if(min_distance > sum_distance):                                        # ? Jika 'flags' lebih besar dari jarak sekarang
@@ -217,24 +298,47 @@ def find_path(world:World):
                 next_position = pos                                                 # ? dan posisi sekarang akan menjadi calon next_position
 
         # ===========================================
-                
+
+
         if min_distance == float('inf'):                                            # ? jika 'flags' tidak ada perubahan sama sekali
             world = rewind(world, current_position)                                 # ? itu berarti tidak ada jalan sama sekali maka gunakan fungsi rewind karena dalam posisi terjebak
-            if not world:                                                           # ? jika fungsi Rewind mengembalikan FALSE yang artinya tidak ada jalan
+            last_distance_to_start_pos = 0
+            distance_to_start_pos = 0
+            if world[1] == False:                                                           # ? jika fungsi Rewind mengembalikan FALSE yang artinya tidak ada jalan
                 print("KAMU MENJEBAK SAYA KOCAK!")                                  # ? Maka selesai karena tidak ada jalan sama sekali
+                print(world[0].show_clean())
                 break                                                               # ? Keluar loop
-            continue
+            continue                                                                # ? Skip loop
+        
+        distance_to_start_pos = operate_two_list(next_position, start_pos, lambda x,y:abs(x-y))
+        distance_to_start_pos = distance_to_start_pos[0]+distance_to_start_pos[1]
+        
+        # ! ================ (V4 Inefficient-Improvement) ================== ! #
+        if(distance_to_start_pos <= last_distance_to_start_pos):
+            target_pos = next_position
+            put_target(world, next_position, start_pos)
+            world.replace("-", " ")
+            last_distance_to_start_pos = 0
+        else:
+            world = move_player(world, next_position, current_position)
+            last_distance_to_start_pos = distance_to_start_pos
+            
+            
                 
-        world = move_player(world, next_position, current_position)
         print(world.show_clean())                                           # ? Menampilkan gambar map dalam WORLD
+        print(distance_to_start_pos <= last_distance_to_start_pos)
         path_history.append(current_position)
         
         
         if find_pos(world) == target_pos:
-            print("GOTCU!")
-            break
+            if find_pos(world, MT):
+                target_pos = find_pos(world, MT)
+                print("Got target!")
+            else:
+                print("GOTCU!")
+                break
         
-        if index >= max_iteration:
+        if index >= MAX_ITERATION:
             print(":(")
             break
         
