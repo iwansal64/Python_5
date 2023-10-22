@@ -1,4 +1,4 @@
-
+import pygame
 
 
 S = " " # ? PATH
@@ -6,11 +6,26 @@ P = "P" # ? PLAYER
 T = "T" # ? TARGET
 O = "X" # ? OBSTACLE
 
-x = [
-    [T, S, S, S],
-    [O, O, S, S],
-    [S, S, S, S],
-    [P, S, S, S]
+MAP_1 = [
+    [T, S, S, S, S, S, S, S],
+    [O, O, O, O, S, O, O, O],
+    [S, S, S, O, S, O, S, S],
+    [S, O, S, O, S, S, S, O],
+    [S, O, S, O, O, S, O, O],
+    [S, O, S, S, S, S, O, O],
+    [S, O, S, O, O, O, O, O],
+    [S, S, S, S, S, S, S, P]
+]
+
+MAP_2 = [
+    [T, S, S, S, S, S, S, S],
+    [O, O, O, O, S, O, O, O],
+    [O, O, S, O, S, O, S, S],
+    [S, O, S, O, S, S, S, O],
+    [S, O, S, O, S, O, O, O],
+    [S, S, S, S, S, O, O, O],
+    [S, O, O, O, O, O, O, O],
+    [S, S, S, S, S, S, S, P]
 ]
 
 class World:
@@ -48,7 +63,8 @@ class World:
                     "tag":tag,
                     "explored":explored,
                     "before":False,
-                    "cost":cost
+                    "cost":cost,
+                    "is_route":False
                 }
                 
                 self.map_info[i].append(starting_info)
@@ -72,14 +88,18 @@ class World:
         surround = self.get_surround_pos(self.current_pos)
         early_cost = self.get_cost(self.current_pos)
         for (x, y) in surround:
-            try:
-                before_cost = self.map_info[y][x]["cost"]
-            except IndexError:
+            if x > len(self.map_info) - 1 or x < 0 or y > len(self.map_info[1]) - 1 or y < 0:
                 continue
+            
+            if self.map_info[x][y]["tag"] == "obstacle":
+                continue
+            
+            before_cost = self.map_info[x][y]["cost"]
 
             if before_cost > early_cost+1:
-                self.map_info[y][x]["before"] = self.current_pos
-                self.map_info[y][x]["cost"] = early_cost+1
+                self.map_info[x][y]["before"] = self.current_pos
+                self.map_info[x][y]["cost"] = early_cost+1
+                
                 
     def get_shortest_cost(self):
         lowest_cost = float('inf')
@@ -103,12 +123,16 @@ class World:
         self.map_info[self.current_pos[0]][self.current_pos[1]]["explored"] = True
         
         
-    def track_path(self, pos) -> list[tuple[2]]:
+    def track_path(self, pos, its_a_target:bool=False) -> list[tuple[2]]:
         path = []
         current_pos = pos
         while current_pos != self.start_pos:
+            if its_a_target and current_pos != pos:
+                self.map_info[current_pos[0]][current_pos[1]]["is_route"] = True
+
             path.append(current_pos)
             current_pos = self.map_info[current_pos[0]][current_pos[1]]["before"]
+            
             if current_pos == False:
                 break
             
@@ -132,20 +156,79 @@ class World:
             
             iteration += 1
 
-        track_path = self.track_path(self.target_pos)
+        track_path = self.track_path(self.target_pos, True)
 
         return track_path, iteration
 
         
         
 
-world = World(x)
+world = World(MAP_2)
 
-print(world.route())
-
-
-
+route, iteration = world.route()
+print(world.get_surround_pos((2, 0)))
 
 
 
+CELL_WIDTH = 50
+CELL_HEIGHT = 50
 
+PLAYER_COLOR = (20, 100, 100)
+PATH_COLOR = (80, 80, 80)
+TARGET_COLOR = (200, 10, 10)
+OBSTACLE_COLOR = (10, 10, 10)
+ROUTE_COLOR = (34, 164, 212)
+
+pygame.init()
+
+WIDTH = 900
+HEIGHT = 900
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+clock = pygame.time.Clock()
+running = True
+
+show_path = False
+
+while running:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+
+        elif event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_q:
+                running = False
+                break
+            
+            elif event.key == pygame.K_SPACE:
+                show_path = False if show_path else True
+    
+    if not running:
+        break
+
+    screen.fill("gray")
+
+    # ? Grid Creation
+    for i in range(len(world.map)):
+        for j in range(len(world.map[0])):
+            color = PATH_COLOR
+            tag = world.map_info[i][j]["tag"]
+            if tag == "player":
+                color = PLAYER_COLOR
+            elif tag == "obstacle":
+                color = OBSTACLE_COLOR
+            elif tag == "target":
+                color = TARGET_COLOR
+                
+            if show_path and world.map_info[i][j]["is_route"]:
+                color = ROUTE_COLOR
+
+            pygame.draw.rect(screen, color, (j*CELL_HEIGHT+2*j, i*CELL_WIDTH+2*i, CELL_WIDTH, CELL_HEIGHT), border_radius=5)
+            
+    # flip() the display to put your work on screen
+    pygame.display.flip()
+    pygame.display.update()
+
+    clock.tick(60)  # limits FPS to 60
+    
+    
+pygame.quit()
