@@ -20,14 +20,14 @@ while True:
         fake_smile_copy = numpy.copy(fake_smile)
         fake_smile_copy = cv2.resize(fake_smile_copy, (w, h))
         cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 6)
-        if y > 50 and x > 50 and (y+h) < len(frame) and (x+w) < len(frame[0]):
-            frame[(y-50):(y+h+50)][(x-50):(x+w+50)] = fake_smile_copy
-        elif y > 50 and x > 50:
-            frame[(y-50):(y+h)][(x-50):(x+w)] = fake_smile_copy
-        elif (y+h) < len(frame) and (x+w) < len(frame[0]):
-            frame[(y):(y+h+50)][(x):(x+w+50)] = fake_smile_copy
-        else:
-            frame[(y):(y+h)][(x):(x+w)] = fake_smile_copy
+        # if y > 50 and x > 50 and (y+h) < len(frame) and (x+w) < len(frame[0]):
+        #     frame[(y-50):(y+h+50)][(x-50):(x+w+50)] = fake_smile_copy
+        # elif y > 50 and x > 50:
+        #     frame[(y-50):(y+h)][(x-50):(x+w)] = fake_smile_copy
+        # elif (y+h) < len(frame) and (x+w) < len(frame[0]):
+        #     frame[(y):(y+h+50)][(x):(x+w+50)] = fake_smile_copy
+        # else:
+        #     frame[(y):(y+h)][(x):(x+w)] = fake_smile_copy
 
         # frame[y:(y+h)] 
         detected_face+=1

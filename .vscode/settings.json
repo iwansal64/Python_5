@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "*.cs": "csharp",
+        "*.html": "html",
+        "txt": "c"
+    }
+}

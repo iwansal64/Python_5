@@ -38,6 +38,17 @@ MAP_3 = [
     [T, O, O, O, O, O]
 ]
 
+MAP_4 = [
+    [S, S, S, S, S, O, S, S, S, S, S, O],
+    [S, O, O, O, S, O, S, S, S, S, S, O],
+    [S, O, S, P, S, O, S, S, S, S, S, O],
+    [S, O, S, S, S, O, S, S, S, S, S, O],
+    [S, O, S, S, S, O, S, S, S, S, S, O],
+    [S, O, S, S, S, O, S, S, S, S, S, O],
+    [S, O, S, S, S, O, S, S, S, S, S, O],
+    [T, O, O, O, O, O, S, S, S, S, S, O]
+]
+
 class World:
     def __init__(self, map:list):
         self.map = map
@@ -258,7 +269,7 @@ class World:
         
         
 
-world = World(MAP_3)
+world = World(MAP_4)
 
 print(world.get_surround_pos((2, 0)))
 
